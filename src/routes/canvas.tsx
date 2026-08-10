@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Circle, Hand, Link2, Plus, Redo2, Save, Square, Undo2, ZoomIn, ZoomOut } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { MindMapNodeCard } from "@/components/canvas/MindMapNodeCard";
+import { ConnectionLayer } from "@/components/canvas/ConnectionLayer";
 import { useMindMapNodes } from "@/hooks/useMindMapNodes";
 import { NODE_COLORS, NODE_HEIGHT, NODE_WIDTH, type NodeShape } from "@/lib/mindmap";
 import { cn } from "@/lib/utils";
@@ -32,14 +33,18 @@ const shapeOptions: { value: NodeShape; label: string; icon: typeof Square }[] =
 
 function CanvasPage() {
   const canvasRef = useRef<HTMLDivElement>(null);
+  const [connectMode, setConnectMode] = useState(false);
+  const [connectSourceId, setConnectSourceId] = useState<string | null>(null);
   const {
     nodes,
+    connections,
     selectedId,
     setSelectedId,
     addNode,
     updateNode,
     moveNode,
     removeNode,
+    addConnection,
     setColor,
     setShape,
   } = useMindMapNodes();
@@ -57,9 +62,28 @@ function CanvasPage() {
     addNode(x, y);
   }
 
+  function toggleConnectMode() {
+    setConnectMode((on) => !on);
+    setConnectSourceId(null);
+  }
+
+  function handleNodeSelect(id: string) {
+    if (!connectMode) {
+      setSelectedId(id);
+      return;
+    }
+    if (connectSourceId === null) {
+      setConnectSourceId(id);
+      setSelectedId(id);
+      return;
+    }
+    if (connectSourceId !== id) addConnection(connectSourceId, id);
+    setConnectSourceId(null);
+  }
+
   const tools = [
     { label: "Add Node", icon: Plus, onClick: handleAddNode, disabled: false },
-    { label: "Connect", icon: Link2, disabled: true },
+    { label: "Connect", icon: Link2, onClick: toggleConnectMode, disabled: false, active: connectMode },
     { label: "Undo", icon: Undo2, disabled: true },
     { label: "Redo", icon: Redo2, disabled: true },
     { label: "Zoom In", icon: ZoomIn, disabled: true },
@@ -74,8 +98,13 @@ function CanvasPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Canvas Editor</h1>
             <p className="text-sm text-muted-foreground">
-              Untitled map · {nodes.length} {nodes.length === 1 ? "node" : "nodes"} · double-click a
-              node to edit its text.
+              Untitled map · {nodes.length} {nodes.length === 1 ? "node" : "nodes"} ·{" "}
+              {connections.length} {connections.length === 1 ? "connection" : "connections"} ·{" "}
+              {connectMode
+                ? connectSourceId
+                  ? "Now click the target node."
+                  : "Connect mode: click the source node."
+                : "double-click a node to edit its text."}
             </p>
           </div>
           <span className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-soft">
@@ -132,7 +161,10 @@ function CanvasPage() {
         <div
           ref={canvasRef}
           onPointerDown={(e) => {
-            if (e.target === e.currentTarget) setSelectedId(null);
+            if (e.target === e.currentTarget) {
+              setSelectedId(null);
+              setConnectSourceId(null);
+            }
           }}
           className="relative h-[65vh] min-h-[420px] overflow-hidden rounded-3xl border border-border canvas-grid shadow-soft"
         >
@@ -148,12 +180,16 @@ function CanvasPage() {
             </div>
           )}
 
+          <ConnectionLayer nodes={nodes} connections={connections} />
+
           {nodes.map((node) => (
             <MindMapNodeCard
               key={node.id}
               node={node}
               selected={node.id === selectedId}
-              onSelect={setSelectedId}
+              onSelect={handleNodeSelect}
+              connectMode={connectMode}
+              isConnectSource={node.id === connectSourceId}
               onTextChange={(id, text) => updateNode(id, { text })}
               onDelete={removeNode}
               onDragMove={moveNode}
@@ -167,9 +203,13 @@ function CanvasPage() {
                 type="button"
                 title={label}
                 aria-label={label}
+                aria-pressed={"active" in rest ? rest.active : undefined}
                 onClick={"onClick" in rest ? rest.onClick : undefined}
                 disabled={rest.disabled}
-                className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                className={cn(
+                  "flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent disabled:hover:text-muted-foreground",
+                  "active" in rest && rest.active && "bg-secondary text-foreground",
+                )}
               >
                 <Icon className="size-4" />
                 <span className="hidden lg:inline">{label}</span>
