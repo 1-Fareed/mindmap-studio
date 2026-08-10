@@ -10,6 +10,8 @@ type Props = {
   onTextChange: (id: string, text: string) => void;
   onDelete: (id: string) => void;
   onDragMove: (id: string, x: number, y: number) => void;
+  connectMode?: boolean;
+  isConnectSource?: boolean;
 };
 
 export function MindMapNodeCard({
@@ -19,6 +21,8 @@ export function MindMapNodeCard({
   onTextChange,
   onDelete,
   onDragMove,
+  connectMode = false,
+  isConnectSource = false,
 }: Props) {
   const [editing, setEditing] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -34,7 +38,7 @@ export function MindMapNodeCard({
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
     onSelect(node.id);
-    if (editing) return;
+    if (editing || connectMode) return;
     const parent = event.currentTarget.parentElement;
     if (!parent) return;
     const bounds = parent.getBoundingClientRect();
@@ -46,6 +50,7 @@ export function MindMapNodeCard({
   }
 
   function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    if (connectMode) return;
     const offset = dragOffset.current;
     const parent = event.currentTarget.parentElement;
     if (!offset || !parent) return;
@@ -86,9 +91,10 @@ export function MindMapNodeCard({
       }}
       className={cn(
         "group absolute flex touch-none select-none items-center justify-center border-2 p-3 text-center shadow-soft transition-shadow",
-        editing ? "cursor-text" : "cursor-grab active:cursor-grabbing",
+        editing ? "cursor-text" : connectMode ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing",
         isCircle ? "rounded-full" : "rounded-2xl",
         selected && "shadow-lift ring-2 ring-ring ring-offset-2 ring-offset-card",
+        isConnectSource && "shadow-lift ring-2 ring-primary ring-offset-2 ring-offset-card",
       )}
       style={{
         left: node.x,
