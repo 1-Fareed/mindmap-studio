@@ -31,6 +31,15 @@ export const CIRCLE_SIZE = 120;
 
 export const STORAGE_KEY = "mindmap:nodes:default";
 export const CONNECTIONS_STORAGE_KEY = "mindmap:connections:default";
+export const MAPS_STORAGE_KEY = "mindmap:maps:v1";
+
+export type MindMapDoc = {
+  id: string;
+  title: string;
+  nodes: MindMapNode[];
+  connections: MindMapConnection[];
+  updatedAt: number;
+};
 
 export type MindMapConnection = {
   id: string;
