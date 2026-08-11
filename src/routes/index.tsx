@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Network, Plus, Sparkles, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
@@ -83,13 +83,13 @@ function Dashboard() {
                 <Plus className="size-4" />
                 New Map
               </button>
-              <a
-                href="/templates"
+              <Link
+                to="/templates"
                 className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-secondary"
               >
                 <Sparkles className="size-4" />
                 Browse templates
-              </a>
+              </Link>
             </div>
           </div>
         ) : (
