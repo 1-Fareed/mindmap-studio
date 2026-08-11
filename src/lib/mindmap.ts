@@ -134,3 +134,65 @@ export function saveNodes(nodes: MindMapNode[]) {
     /* storage unavailable */
   }
 }
+
+/* ---------- Multi-map storage ---------- */
+
+export function loadMaps(): MindMapDoc[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(MAPS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return (parsed as MindMapDoc[]).filter(
+      (m) => !!m && typeof m.id === "string" && Array.isArray(m.nodes),
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function saveMaps(maps: MindMapDoc[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(MAPS_STORAGE_KEY, JSON.stringify(maps));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+export function getMap(id: string): MindMapDoc | null {
+  return loadMaps().find((m) => m.id === id) ?? null;
+}
+
+export function upsertMap(doc: MindMapDoc) {
+  const maps = loadMaps();
+  const index = maps.findIndex((m) => m.id === doc.id);
+  if (index === -1) maps.push(doc);
+  else maps[index] = doc;
+  saveMaps(maps);
+}
+
+export function deleteMap(id: string) {
+  saveMaps(loadMaps().filter((m) => m.id !== id));
+}
+
+export function createMap(
+  title = "Untitled map",
+  nodes: MindMapNode[] = [],
+  connections: MindMapConnection[] = [],
+): MindMapDoc {
+  const doc: MindMapDoc = { id: makeId("map"), title, nodes, connections, updatedAt: Date.now() };
+  upsertMap(doc);
+  return doc;
+}
+
+export function makeNode(
+  text: string,
+  x: number,
+  y: number,
+  color: NodeColor = "blue",
+  shape: NodeShape = "rounded",
+): MindMapNode {
+  return { ...createNode(x, y), text, color, shape };
+}
