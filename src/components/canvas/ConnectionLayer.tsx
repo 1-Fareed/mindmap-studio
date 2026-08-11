@@ -53,7 +53,7 @@ export function ConnectionLayer({ nodes, connections }: Props) {
   const byId = new Map(nodes.map((n) => [n.id, n]));
 
   return (
-    <svg className="pointer-events-none absolute inset-0 size-full" aria-hidden="true">
+    <svg className="pointer-events-none absolute inset-0 size-full overflow-visible" aria-hidden="true">
       <defs>
         <marker
           id="mindmap-arrow"
