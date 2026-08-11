@@ -10,6 +10,8 @@ type Props = {
   onTextChange: (id: string, text: string) => void;
   onDelete: (id: string) => void;
   onDragMove: (id: string, x: number, y: number) => void;
+  onDragStart?: () => void;
+  scale?: number;
   connectMode?: boolean;
   isConnectSource?: boolean;
 };
@@ -21,12 +23,14 @@ export function MindMapNodeCard({
   onTextChange,
   onDelete,
   onDragMove,
+  onDragStart,
+  scale = 1,
   connectMode = false,
   isConnectSource = false,
 }: Props) {
   const [editing, setEditing] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const dragOffset = useRef<{ dx: number; dy: number } | null>(null);
+  const dragStart = useRef<{ px: number; py: number; x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (editing) inputRef.current?.focus();
@@ -39,35 +43,23 @@ export function MindMapNodeCard({
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
     onSelect(node.id);
     if (editing || connectMode) return;
-    const parent = event.currentTarget.parentElement;
-    if (!parent) return;
-    const bounds = parent.getBoundingClientRect();
-    dragOffset.current = {
-      dx: event.clientX - bounds.left - node.x,
-      dy: event.clientY - bounds.top - node.y,
-    };
+    event.stopPropagation();
+    dragStart.current = { px: event.clientX, py: event.clientY, x: node.x, y: node.y };
+    onDragStart?.();
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
   function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
     if (connectMode) return;
-    const offset = dragOffset.current;
-    const parent = event.currentTarget.parentElement;
-    if (!offset || !parent) return;
-    const bounds = parent.getBoundingClientRect();
-    const x = Math.min(
-      Math.max(0, event.clientX - bounds.left - offset.dx),
-      Math.max(0, bounds.width - width),
-    );
-    const y = Math.min(
-      Math.max(0, event.clientY - bounds.top - offset.dy),
-      Math.max(0, bounds.height - height),
-    );
-    onDragMove(node.id, x, y);
+    const start = dragStart.current;
+    if (!start) return;
+    const x = start.x + (event.clientX - start.px) / scale;
+    const y = start.y + (event.clientY - start.py) / scale;
+    onDragMove(node.id, Math.round(x), Math.round(y));
   }
 
   function endDrag(event: React.PointerEvent<HTMLDivElement>) {
-    dragOffset.current = null;
+    dragStart.current = null;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }

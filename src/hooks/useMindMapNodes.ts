@@ -2,42 +2,80 @@ import { useCallback, useEffect, useState } from "react";
 import {
   createNode,
   createConnection,
-  loadNodes,
-  loadConnections,
-  saveNodes,
-  saveConnections,
+  getMap,
+  upsertMap,
   type MindMapConnection,
   type MindMapNode,
   type NodeColor,
   type NodeShape,
 } from "@/lib/mindmap";
 
-export function useMindMapNodes() {
+type Snapshot = { nodes: MindMapNode[]; connections: MindMapConnection[] };
+
+export function useMindMapNodes(mapId: string | null) {
   const [nodes, setNodes] = useState<MindMapNode[]>([]);
   const [connections, setConnections] = useState<MindMapConnection[]>([]);
+  const [title, setTitle] = useState("Untitled map");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [past, setPast] = useState<Snapshot[]>([]);
+  const [future, setFuture] = useState<Snapshot[]>([]);
 
-  // Load once on the client so SSR markup stays stable.
+  // Load the requested map once on the client so SSR markup stays stable.
   useEffect(() => {
-    setNodes(loadNodes());
-    setConnections(loadConnections());
+    if (!mapId) return;
+    const doc = getMap(mapId);
+    setNodes(doc?.nodes ?? []);
+    setConnections(doc?.connections ?? []);
+    setTitle(doc?.title ?? "Untitled map");
+    setSelectedId(null);
+    setPast([]);
+    setFuture([]);
     setLoaded(true);
-  }, []);
+  }, [mapId]);
 
+  // Autosave the whole map document.
   useEffect(() => {
-    if (loaded) saveNodes(nodes);
-  }, [nodes, loaded]);
+    if (!loaded || !mapId) return;
+    upsertMap({ id: mapId, title, nodes, connections, updatedAt: Date.now() });
+  }, [loaded, mapId, title, nodes, connections]);
 
-  useEffect(() => {
-    if (loaded) saveConnections(connections);
-  }, [connections, loaded]);
+  const snapshot = useCallback(() => {
+    setPast((p) => [...p.slice(-49), { nodes, connections }]);
+    setFuture([]);
+  }, [nodes, connections]);
 
-  const addNode = useCallback((x: number, y: number) => {
-    const node = createNode(x, y);
-    setNodes((prev) => [...prev, node]);
-    setSelectedId(node.id);
-  }, []);
+  const undo = useCallback(() => {
+    setPast((p) => {
+      if (p.length === 0) return p;
+      const prev = p[p.length - 1]!;
+      setFuture((f) => [{ nodes, connections }, ...f].slice(0, 50));
+      setNodes(prev.nodes);
+      setConnections(prev.connections);
+      return p.slice(0, -1);
+    });
+  }, [nodes, connections]);
+
+  const redo = useCallback(() => {
+    setFuture((f) => {
+      if (f.length === 0) return f;
+      const next = f[0]!;
+      setPast((p) => [...p, { nodes, connections }]);
+      setNodes(next.nodes);
+      setConnections(next.connections);
+      return f.slice(1);
+    });
+  }, [nodes, connections]);
+
+  const addNode = useCallback(
+    (x: number, y: number) => {
+      snapshot();
+      const node = createNode(x, y);
+      setNodes((prev) => [...prev, node]);
+      setSelectedId(node.id);
+    },
+    [snapshot],
+  );
 
   const updateNode = useCallback((id: string, patch: Partial<MindMapNode>) => {
     setNodes((prev) => prev.map((n) => (n.id === id ? { ...n, ...patch } : n)));
@@ -47,41 +85,66 @@ export function useMindMapNodes() {
     setNodes((prev) => prev.map((n) => (n.id === id ? { ...n, x, y } : n)));
   }, []);
 
-  const removeNode = useCallback((id: string) => {
-    setNodes((prev) => prev.filter((n) => n.id !== id));
-    setConnections((prev) =>
-      prev.filter((c) => c.sourceNodeId !== id && c.targetNodeId !== id),
-    );
-    setSelectedId((cur) => (cur === id ? null : cur));
-  }, []);
-
-  const addConnection = useCallback((sourceNodeId: string, targetNodeId: string) => {
-    if (sourceNodeId === targetNodeId) return;
-    setConnections((prev) => {
-      const exists = prev.some(
-        (c) => c.sourceNodeId === sourceNodeId && c.targetNodeId === targetNodeId,
+  const removeNode = useCallback(
+    (id: string) => {
+      snapshot();
+      setNodes((prev) => prev.filter((n) => n.id !== id));
+      setConnections((prev) =>
+        prev.filter((c) => c.sourceNodeId !== id && c.targetNodeId !== id),
       );
-      if (exists) return prev;
-      return [...prev, createConnection(sourceNodeId, targetNodeId)];
-    });
-  }, []);
+      setSelectedId((cur) => (cur === id ? null : cur));
+    },
+    [snapshot],
+  );
 
-  const removeConnection = useCallback((id: string) => {
-    setConnections((prev) => prev.filter((c) => c.id !== id));
-  }, []);
+  const addConnection = useCallback(
+    (sourceNodeId: string, targetNodeId: string) => {
+      if (sourceNodeId === targetNodeId) return;
+      snapshot();
+      setConnections((prev) => {
+        const exists = prev.some(
+          (c) => c.sourceNodeId === sourceNodeId && c.targetNodeId === targetNodeId,
+        );
+        if (exists) return prev;
+        return [...prev, createConnection(sourceNodeId, targetNodeId)];
+      });
+    },
+    [snapshot],
+  );
+
+  const removeConnection = useCallback(
+    (id: string) => {
+      snapshot();
+      setConnections((prev) => prev.filter((c) => c.id !== id));
+    },
+    [snapshot],
+  );
 
   const setColor = useCallback(
-    (id: string, color: NodeColor) => updateNode(id, { color }),
-    [updateNode],
+    (id: string, color: NodeColor) => {
+      snapshot();
+      updateNode(id, { color });
+    },
+    [snapshot, updateNode],
   );
   const setShape = useCallback(
-    (id: string, shape: NodeShape) => updateNode(id, { shape }),
-    [updateNode],
+    (id: string, shape: NodeShape) => {
+      snapshot();
+      updateNode(id, { shape });
+    },
+    [snapshot, updateNode],
   );
+
+  const saveNow = useCallback(() => {
+    if (!mapId) return;
+    upsertMap({ id: mapId, title, nodes, connections, updatedAt: Date.now() });
+  }, [mapId, title, nodes, connections]);
 
   return {
     nodes,
     connections,
+    title,
+    setTitle,
     selectedId,
     setSelectedId,
     addNode,
@@ -92,5 +155,12 @@ export function useMindMapNodes() {
     removeConnection,
     setColor,
     setShape,
+    snapshot,
+    undo,
+    redo,
+    canUndo: past.length > 0,
+    canRedo: future.length > 0,
+    saveNow,
+    loaded,
   };
 }

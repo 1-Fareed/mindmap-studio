@@ -1,6 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Network, Plus, Sparkles } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Network, Plus, Sparkles, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { createMap, deleteMap, loadMaps, type MindMapDoc } from "@/lib/mindmap";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,11 +23,28 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-type MindMap = { id: string; title: string; nodeCount: number; updatedAt: string };
-
-const maps: MindMap[] = [];
+function formatDate(ts: number) {
+  return new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
 function Dashboard() {
+  const navigate = useNavigate();
+  const [maps, setMaps] = useState<MindMapDoc[]>([]);
+
+  useEffect(() => {
+    setMaps(loadMaps().sort((a, b) => b.updatedAt - a.updatedAt));
+  }, []);
+
+  function handleNewMap() {
+    const doc = createMap("Untitled map");
+    void navigate({ to: "/canvas", search: { map: doc.id } });
+  }
+
+  function handleDelete(id: string) {
+    deleteMap(id);
+    setMaps((prev) => prev.filter((m) => m.id !== id));
+  }
+
   return (
     <AppShell>
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -36,13 +55,14 @@ function Dashboard() {
               All your mind maps stay right here in this browser.
             </p>
           </div>
-          <Link
-            to="/canvas"
+          <button
+            type="button"
+            onClick={handleNewMap}
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lift"
           >
             <Plus className="size-4" />
             New Map
-          </Link>
+          </button>
         </div>
 
         {maps.length === 0 ? (
@@ -55,13 +75,14 @@ function Dashboard() {
               Start from a blank canvas or pick a ready-made template to get moving faster.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-2">
-              <Link
-                to="/canvas"
+              <button
+                type="button"
+                onClick={handleNewMap}
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 <Plus className="size-4" />
                 New Map
-              </Link>
+              </button>
               <Link
                 to="/templates"
                 className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-secondary"
@@ -74,19 +95,35 @@ function Dashboard() {
         ) : (
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {maps.map((map) => (
-              <Link
+              <article
                 key={map.id}
-                to="/canvas"
-                className="rounded-2xl border border-border bg-card p-5 shadow-soft transition-all hover:-translate-y-1 hover:shadow-lift"
+                className="group relative rounded-2xl border border-border bg-card p-5 shadow-soft transition-all hover:-translate-y-1 hover:shadow-lift"
               >
-                <span className="flex size-10 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                  <Network className="size-5" />
-                </span>
-                <h3 className="mt-4 text-base font-semibold">{map.title}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {map.nodeCount} nodes · updated {map.updatedAt}
-                </p>
-              </Link>
+                <button
+                  type="button"
+                  onClick={() => void navigate({ to: "/canvas", search: { map: map.id } })}
+                  className="block w-full text-left"
+                >
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                    <Network className="size-5" />
+                  </span>
+                  <h3 className="mt-4 text-base font-semibold">{map.title || "Untitled map"}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {map.nodes.length} {map.nodes.length === 1 ? "node" : "nodes"} ·{" "}
+                    {map.connections.length}{" "}
+                    {map.connections.length === 1 ? "connection" : "connections"} · updated{" "}
+                    {formatDate(map.updatedAt)}
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Delete ${map.title}`}
+                  onClick={() => handleDelete(map.id)}
+                  className="absolute right-4 top-4 flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground opacity-0 transition-all hover:border-destructive hover:text-destructive focus:opacity-100 group-hover:opacity-100"
+                >
+                  <Trash2 className="size-4" />
+                </button>
+              </article>
             ))}
           </div>
         )}
