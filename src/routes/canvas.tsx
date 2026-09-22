@@ -113,10 +113,13 @@ function CanvasPage() {
     const bounds = canvasRef.current?.getBoundingClientRect();
     const width = bounds?.width ?? 800;
     const height = bounds?.height ?? 500;
-    // Stagger new nodes around the visible centre so they never stack exactly.
-    const step = (nodes.length % 8) * 28;
-    const x = (width / 2 - pan.x) / zoom - NODE_WIDTH / 2 + step;
-    const y = (height / 2 - pan.y) / zoom - NODE_HEIGHT / 2 + step;
+    // Lay new nodes out on a small grid around the visible centre so they
+    // never land on top of an existing node.
+    const index = nodes.length % 9;
+    const col = (index % 3) - 1;
+    const row = Math.floor(index / 3) - 1;
+    const x = (width / 2 - pan.x) / zoom - NODE_WIDTH / 2 + col * (NODE_WIDTH + 40);
+    const y = (height / 2 - pan.y) / zoom - NODE_HEIGHT / 2 + row * (NODE_HEIGHT + 60);
     addNode(Math.round(x), Math.round(y));
   }
 
