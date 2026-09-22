@@ -190,12 +190,16 @@ function CanvasPage() {
             <p className="text-sm text-muted-foreground">
               {nodes.length} {nodes.length === 1 ? "node" : "nodes"} ·{" "}
               {connections.length} {connections.length === 1 ? "connection" : "connections"} ·{" "}
-              {connectMode
-                ? connectSourceId
-                  ? "Now click the target node."
-                  : "Connect mode: click the source node."
-                : "double-click a node to edit · drag the background to pan."}
+              double-click a node to edit · drag the background to pan.
             </p>
+            {connectMode && (
+              <p className="mt-2 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                <Link2 className="size-3.5" />
+                {connectSourceId
+                  ? "Connect mode — select target node"
+                  : "Connect mode — select source node"}
+              </p>
+            )}
           </div>
           <span className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-soft">
             Zoom {Math.round(zoom * 100)}%
