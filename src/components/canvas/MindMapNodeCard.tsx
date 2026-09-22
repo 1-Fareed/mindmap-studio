@@ -41,9 +41,11 @@ export function MindMapNodeCard({
   const height = isCircle ? CIRCLE_SIZE : NODE_HEIGHT;
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    // Always stop the event here: otherwise the canvas pan handler runs and
+    // resets the connect-mode source selection right after we set it.
+    event.stopPropagation();
     onSelect(node.id);
     if (editing || connectMode) return;
-    event.stopPropagation();
     dragStart.current = { px: event.clientX, py: event.clientY, x: node.x, y: node.y };
     onDragStart?.();
     event.currentTarget.setPointerCapture(event.pointerId);
