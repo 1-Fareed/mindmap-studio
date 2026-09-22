@@ -11,6 +11,7 @@ type Props = {
   onDelete: (id: string) => void;
   onDragMove: (id: string, x: number, y: number) => void;
   onDragStart?: () => void;
+  onEditStart?: () => void;
   scale?: number;
   connectMode?: boolean;
   isConnectSource?: boolean;
