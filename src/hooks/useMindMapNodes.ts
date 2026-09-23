@@ -100,16 +100,16 @@ export function useMindMapNodes(mapId: string | null) {
   const addConnection = useCallback(
     (sourceNodeId: string, targetNodeId: string) => {
       if (sourceNodeId === targetNodeId) return;
+      // Only record history when the connection is genuinely new, otherwise a
+      // blocked duplicate would leave a no-op step in the undo stack.
+      const exists = connections.some(
+        (c) => c.sourceNodeId === sourceNodeId && c.targetNodeId === targetNodeId,
+      );
+      if (exists) return;
       snapshot();
-      setConnections((prev) => {
-        const exists = prev.some(
-          (c) => c.sourceNodeId === sourceNodeId && c.targetNodeId === targetNodeId,
-        );
-        if (exists) return prev;
-        return [...prev, createConnection(sourceNodeId, targetNodeId)];
-      });
+      setConnections((prev) => [...prev, createConnection(sourceNodeId, targetNodeId)]);
     },
-    [snapshot],
+    [connections, snapshot],
   );
 
   const removeConnection = useCallback(
