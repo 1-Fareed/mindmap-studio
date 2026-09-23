@@ -1,36 +1,99 @@
 # MindMap Studio
 
-Build a Mind Mapping Studio web application using React, TypeScript, Tailwind CSS and Lucide icons. Follow the ICT Academy project specification I provided.
+An interactive web-based Mind Mapping Studio built with React and TypeScript. It allows users to visually organize ideas using draggable nodes, dynamic connections, customizable node styles, zoom and pan controls, and browser-based project storage.
 
-Create a clean, modern, responsive application with three main views: Dashboard, Canvas Editor, and Templates.
+## Features
 
-For this first version, focus only on the application foundation and UI. Create a Dashboard called “My Maps” with an empty state saying “No mind maps yet — create your first one!”, a prominent “+ New Map” button, and a clean card layout for saved maps.
+- Dashboard for viewing saved mind maps
+- Create and reopen mind maps
+- Add, edit, move and delete nodes
+- Drag-and-drop node positioning
+- Connect nodes using directional arrows
+- Prevent duplicate and self-connections
+- Customize node colors and shapes
+- Zoom in, zoom out and reset canvas
+- Pan around the workspace
+- Undo and redo support
+- Save projects using browser Local Storage
+- Automatic cleanup of invalid saved connections
+- Three starter templates
+- Responsive and clean user interface
 
-Create navigation between Dashboard, Canvas Editor and Templates. Create a Canvas Editor page with a large workspace area and a floating toolbar containing Add Node, Connect, Undo, Redo, Zoom In, Zoom Out and Save controls. The controls can be non-functional placeholders for now; we will implement the functionality step by step.
+## Templates
+### Study Planner
+A visual structure for organizing study subjects, topics and tasks.
 
-Create a Templates page with three template cards: Study Planner, SWOT Analysis and Brainstorming Map.
 
-Use a professional student-project UI with rounded cards, soft shadows, a simple primary accent color, clear typography, subtle hover effects and responsive layouts. Do not add authentication, backend, database or unnecessary SaaS features. Keep all application data browser-based.
+### SWOT Analysis
+A template for organizing Strengths, Weaknesses, Opportunities and Threats.
 
-Important: Do not implement bonus features yet. Build a clean foundation that we can extend with draggable nodes, SVG connections, zoom/pan, localStorage and templates in later steps.
+### Brainstorming Map
+A flexible starting point for generating and connecting ideas.
 
-This project was built with [Lovable](https://lovable.dev).
+## Tech Stack
 
-## Build with Lovable
+- React
+- TypeScript
+- Tailwind CSS
+- SVG
+- Lucide Icons
+- Browser Local Storage
+- Vite
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/3adcc277-517d-45fd-a441-222a67be683c).
+## How It Works
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+The application uses an interactive canvas where ideas are represented as nodes. Nodes can be moved freely around the workspace and connected using directional SVG arrows.
 
-## Development
+Changes to nodes, positions, colors, shapes and connections are managed through application state. Mind maps are stored locally in the browser, allowing saved maps to be reopened and edited later.
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+## Getting Started
 
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+### Prerequisites
+
+- Node.js
+- npm
+
+### Installation
+
+Clone the repository:
+
+``` bash
+git clone https://github.com/1-Fareed/mindmap-studio.git
+cd mindmap-studio
 ```
+Install dependencies:
+```npm install```
+Start the development server:
+```npm run dev```
+Open the local URL shown by Vite in your browser.
+##Project Structure
+```src/
+├── components/
+├── hooks/
+├── lib/
+├── routes/
+└── router.tsx
+public/
+```
+##Learning Outcomes
+This project demonstrates:
+- React component development
+- TypeScript
+- State management
+- Drag and drop interactions
+- Graph-based node relationships
+- SVG connection rendering
+- Zoom and pan functionality
+- Browser Local Storage
+- Responsive UI design
+##Future Improvements
+Possible future enhancements include:
+- PNG and JSON export
+- Dark mode
+- Node search
+- Multi-selection
+- Additional connection styles
+- Collaboration features
+##Project
+This project was developed as part of the ICT Academy Mind Mapping Studio assignment.
+Built with React, TypeScript and Tailwind CSS. 
