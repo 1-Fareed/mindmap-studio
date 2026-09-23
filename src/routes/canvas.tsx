@@ -291,6 +291,7 @@ function CanvasPage() {
                 isConnectSource={node.id === connectSourceId}
                 scale={zoom}
                 onDragStart={snapshot}
+                onEditStart={snapshot}
                 onTextChange={(id, text) => updateNode(id, { text })}
                 onDelete={removeNode}
                 onDragMove={moveNode}

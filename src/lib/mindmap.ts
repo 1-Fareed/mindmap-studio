@@ -144,9 +144,22 @@ export function loadMaps(): MindMapDoc[] {
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return (parsed as MindMapDoc[]).filter(
-      (m) => !!m && typeof m.id === "string" && Array.isArray(m.nodes),
-    );
+    return (parsed as MindMapDoc[])
+      .filter((m) => !!m && typeof m.id === "string" && Array.isArray(m.nodes))
+      .map((m) => {
+        const nodes = m.nodes.filter((n) => !!n && typeof n.id === "string");
+        const ids = new Set(nodes.map((n) => n.id));
+        return {
+          ...m,
+          title: typeof m.title === "string" ? m.title : "Untitled map",
+          nodes,
+          // Drop any orphaned connections so counts and rendering stay correct.
+          connections: (Array.isArray(m.connections) ? m.connections : []).filter(
+            (c) => !!c && ids.has(c.sourceNodeId) && ids.has(c.targetNodeId),
+          ),
+          updatedAt: typeof m.updatedAt === "number" ? m.updatedAt : Date.now(),
+        };
+      });
   } catch {
     return [];
   }

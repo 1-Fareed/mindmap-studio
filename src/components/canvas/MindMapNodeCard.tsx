@@ -25,6 +25,7 @@ export function MindMapNodeCard({
   onDelete,
   onDragMove,
   onDragStart,
+  onEditStart,
   scale = 1,
   connectMode = false,
   isConnectSource = false,
@@ -77,10 +78,14 @@ export function MindMapNodeCard({
       onPointerMove={handlePointerMove}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
-      onDoubleClick={() => setEditing(true)}
+      onDoubleClick={() => {
+        if (!editing) onEditStart?.();
+        setEditing(true);
+      }}
       onKeyDown={(e) => {
         if (e.key === "Enter" && !editing) {
           e.preventDefault();
+          onEditStart?.();
           setEditing(true);
         }
       }}
